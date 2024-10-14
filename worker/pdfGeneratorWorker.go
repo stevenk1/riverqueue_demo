@@ -1,4 +1,4 @@
-package main
+package worker
 
 import (
 	"context"
@@ -29,7 +29,9 @@ func (s PdfGeneratorWorker) Work(ctx context.Context, job *river.Job[PdfGenerato
 
 	if job.Args.SendMail {
 		client := river.ClientFromContext[pgx.Tx](ctx)
-		_, err := client.Insert(ctx, SendMailWorkerArgs{Username: job.Args.Username}, nil)
+		_, err := client.Insert(ctx, SendMailWorkerArgs{Username: job.Args.Username}, &river.InsertOpts{
+			Queue: "mailing",
+		})
 		if err != nil {
 			return err
 		}
