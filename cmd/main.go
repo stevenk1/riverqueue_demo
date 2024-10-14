@@ -6,13 +6,11 @@ import (
 	"fmt"
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/gofiber/fiber/v2"
-	"log"
-	"strconv"
-	"time"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"log"
+	"strconv"
 )
 
 func main() {
@@ -21,7 +19,7 @@ func main() {
 
 	workers := river.NewWorkers()
 
-	river.AddWorker(workers, &worker.PdfGeneratorWorker{})
+	river.AddWorker(workers, &worker.InvoiceGeneratorWorker{})
 	river.AddWorker(workers, &worker.SendMailWorker{})
 
 	riverClient, err := river.NewClient(riverpgxv5.New(dbPool), &river.Config{
@@ -47,9 +45,8 @@ func main() {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{})
 		}
 		for i := 0; i < amount; i++ {
-			_, err = riverClient.Insert(ctx, &worker.PdfGeneratorWorkerArgs{
+			_, err = riverClient.Insert(ctx, &worker.InvoiceGeneratorWorkerArgs{
 				Name:     fmt.Sprintf("invoice-%d", i),
-				Template: "invoice",
 				Username: petname.Generate(2, "-"),
 				SendMail: true,
 			}, nil)
@@ -60,11 +57,4 @@ func main() {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{})
 	})
 	log.Fatal(app.Listen(":3535"))
-}
-
-func infiniteLoop() {
-	for {
-		// Introduce a delay to avoid excessive CPU usage
-		time.Sleep(time.Second)
-	}
 }
